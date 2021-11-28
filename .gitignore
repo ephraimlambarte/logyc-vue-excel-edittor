@@ -1,4 +1,5 @@
 /node_modules
+dist/*
 node_proprietary_modules/*
 !node_proprietary_modules/flowchart-logyc-1.0.0.tgz
 /public/hot
@@ -10,6 +11,9 @@ node_proprietary_modules/*
 /public/vendors~xlsx.js
 /public/xlsx.js
 /storage/*.key
+/dist/vue-excel-editor.esm.js
+/dist/vue-excel-editor.min.js
+/dist/vue-excel-editor.umd.js
 /vendor
 .env
 .env.backup

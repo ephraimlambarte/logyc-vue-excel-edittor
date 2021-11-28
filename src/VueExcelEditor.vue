@@ -2463,7 +2463,7 @@ export default {
       record[field_name_value] =  this.currentRecord[field_name_value];
       let current_field = this.currentField;
      
-      this.$emit('cell-dbfocus', {rowPos ,colPos, cell, record: record, field: current_field});
+      this.$emit('cell-dbfocus', {rowPos ,colPos, cell, record: record, field: field_name});
     },
     inputBoxMouseMove (e) {
       let cursor = 'text'
