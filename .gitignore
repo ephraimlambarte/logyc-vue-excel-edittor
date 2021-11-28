@@ -11,9 +11,9 @@ node_proprietary_modules/*
 /public/vendors~xlsx.js
 /public/xlsx.js
 /storage/*.key
-dist/vue-excel-editor.esm.js
-dist/vue-excel-editor.min.js
-dist/vue-excel-editor.umd.js
+/dist/vue-excel-editor.esm.js
+/dist/vue-excel-editor.min.js
+/dist/vue-excel-editor.umd.js
 /vendor
 .env
 .env.backup
