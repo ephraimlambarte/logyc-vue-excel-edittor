@@ -398,7 +398,9 @@ export default {
       default () {
         return true
       }
-    }
+    },
+    clearSelectedCells: Boolean,
+    deleteSelectedRows: Boolean,
   },
   data () {
     const pageSize = this.noPaging ? 999999 : 20
@@ -568,6 +570,18 @@ export default {
     },
     pageSize (newVal) {
       this.$emit('page-changed', this.pageTop, this.pageTop + newVal - 1)
+    },
+    deleteSelectedRows(){
+      if (this.deleteSelectedRows) {
+        this.deleteSelectedRecords();
+        this.$emit('selected-rows-deleted');
+      }
+    },
+    clearSelectedCells(){
+      if (this.clearSelectedCells) {
+          this.selectedCells = [];
+          this.$emit('selected-cells-cleared');
+      }
     }
   },
   beforeDestroy () {
@@ -1333,7 +1347,7 @@ export default {
       if (e.altKey) this.systable.classList.add('alt')
       if (!this.mousein && !this.focused) return
       if (this.mousein && this.focused && e.keyCode === 13) {
-			this.$emit('selected-cells',  this.selectedCells);
+			    this.$emit('selected-cells',  this.selectedCells);
         	return;
       }
       if (e.ctrlKey || e.metaKey)
