@@ -283,7 +283,7 @@ import PanelFilter from './PanelFilter.vue'
 import PanelSetting from './PanelSetting.vue'
 import PanelFind from './PanelFind.vue'
 import DatePicker from 'vue2-datepicker'
-// import XLSX from 'xlsx'
+import XLSX from 'xlsx'
 
 import 'vue2-datepicker/index.css'
 
@@ -1844,211 +1844,211 @@ export default {
       this.importErrorCallback = errCb
     },   
     doImport (e) {
-    //   this.processing = true
-    //   // this.refresh()
-    //   this.clearAllSelected()
-    //   setTimeout(() => {
-    //     const files = e.target.files
-    //     if (!files || files.length === 0) return
-    //     const file = files[0]
+      this.processing = true
+      // this.refresh()
+      this.clearAllSelected()
+      setTimeout(() => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+        const file = files[0]
 
-    //     const fileReader = new FileReader()
-    //     fileReader.onload = async (e) => {
-    //       try {
-    //         const data = e.target.result
-    //         const wb = XLSX.read(data, {type: 'binary', cellDates: true, cellStyle: false})
-    //         const sheet = wb.SheetNames[0]
-    //         let importData = XLSX.utils.sheet_to_row_object_array(wb.Sheets[sheet])
-    //         importData = importData.filter(rec => Object.keys(rec).length > 0).map((rec) => {
-    //           if (rec.key_1) {
-    //             rec.key = rec.key_1  // Fixed the XLSX issue where key is set to be reserved word
-    //             delete rec.key_1
-    //           }
-    //           Object.keys(rec).forEach(k => {
-    //             if (typeof rec[k] === 'string') rec[k] = rec[k].replace(/[ \r\n\t]+$/g, '')
-    //           })
-    //           return rec
-    //         })
-    //         const keyStart = String(new Date().getTime() % 1e8)
-    //         if (importData.length === 0) {
-    //           if (this.importErrorCallback) this.importErrorCallback('noRecordIsRead')
-    //           throw new Error('VueExcelEditor: ' + this.localizedLabel.noRecordIsRead)
-    //         }
-    //         if (this.fields
-    //           .filter(f => f.keyField)
-    //           .filter(f => typeof importData[0][f.name] === 'undefined' && typeof importData[0][f.label] === 'undefined').length > 0) {
-    //             if (this.importErrorCallback) this.importErrorCallback('missingKeyColumn')
-    //             throw new Error(`VueExcelEditor: ${this.localizedLabel.missingKeyColumn}`)
-    //           }
+        const fileReader = new FileReader()
+        fileReader.onload = async (e) => {
+          try {
+            const data = e.target.result
+            const wb = XLSX.read(data, {type: 'binary', cellDates: true, cellStyle: false})
+            const sheet = wb.SheetNames[0]
+            let importData = XLSX.utils.sheet_to_row_object_array(wb.Sheets[sheet])
+            importData = importData.filter(rec => Object.keys(rec).length > 0).map((rec) => {
+              if (rec.key_1) {
+                rec.key = rec.key_1  // Fixed the XLSX issue where key is set to be reserved word
+                delete rec.key_1
+              }
+              Object.keys(rec).forEach(k => {
+                if (typeof rec[k] === 'string') rec[k] = rec[k].replace(/[ \r\n\t]+$/g, '')
+              })
+              return rec
+            })
+            const keyStart = String(new Date().getTime() % 1e8)
+            if (importData.length === 0) {
+              if (this.importErrorCallback) this.importErrorCallback('noRecordIsRead')
+              throw new Error('VueExcelEditor: ' + this.localizedLabel.noRecordIsRead)
+            }
+            if (this.fields
+              .filter(f => f.keyField)
+              .filter(f => typeof importData[0][f.name] === 'undefined' && typeof importData[0][f.label] === 'undefined').length > 0) {
+                if (this.importErrorCallback) this.importErrorCallback('missingKeyColumn')
+                throw new Error(`VueExcelEditor: ${this.localizedLabel.missingKeyColumn}`)
+              }
 
-    //         let pass = 0
-    //         let inserted = 0
-    //         let updated = 0
-    //         while (pass < 2) {
-    //           const keys = this.fields.filter(f => f.keyField)
-    //           let uniqueKeys = []
-    //           await Promise.all(importData.map(async (line, i) => {
-    //             let rowPos = -1
-    //             if (keys.length) {
-    //               // locate match record
-    //               rowPos = this.table.findIndex(v =>
-    //                 keys.filter(f => 
-    //                   typeof v[f.name] !== 'undefined' 
-    //                   && (v[f.name] === line[f.name] || v[f.name] === line[f.label])).length === keys.length
-    //               )
-    //               if (rowPos === -1) {
-    //                 // If this is a new line, avoid the line with duplicate key
-    //                 const linekey = keys.map(k => line[k.name] || line[k.label]).join(':')
-    //                 if (linekey) {
-    //                   if (uniqueKeys.includes(linekey)) return
-    //                   uniqueKeys.push(linekey)
-    //                 }
-    //               }
-    //             }
+            let pass = 0
+            let inserted = 0
+            let updated = 0
+            while (pass < 2) {
+              const keys = this.fields.filter(f => f.keyField)
+              let uniqueKeys = []
+              await Promise.all(importData.map(async (line, i) => {
+                let rowPos = -1
+                if (keys.length) {
+                  // locate match record
+                  rowPos = this.table.findIndex(v =>
+                    keys.filter(f => 
+                      typeof v[f.name] !== 'undefined' 
+                      && (v[f.name] === line[f.name] || v[f.name] === line[f.label])).length === keys.length
+                  )
+                  if (rowPos === -1) {
+                    // If this is a new line, avoid the line with duplicate key
+                    const linekey = keys.map(k => line[k.name] || line[k.label]).join(':')
+                    if (linekey) {
+                      if (uniqueKeys.includes(linekey)) return
+                      uniqueKeys.push(linekey)
+                    }
+                  }
+                }
 
-    //             // if no match found, find an empty record
-    //             if (rowPos === -1)
-    //               rowPos = this.table.findIndex(v => Object.keys(v).filter(f => !f.startsWith('$')).length === 0)
+                // if no match found, find an empty record
+                if (rowPos === -1)
+                  rowPos = this.table.findIndex(v => Object.keys(v).filter(f => !f.startsWith('$')).length === 0)
 
-    //             const rec = {
-    //               $id: typeof line.$id === 'undefined' ? keyStart + '-' + ('000000' + i).slice(-7) : line.$id
-    //             }
+                const rec = {
+                  $id: typeof line.$id === 'undefined' ? keyStart + '-' + ('000000' + i).slice(-7) : line.$id
+                }
 
-    //             // Raise exception if readonly not not pass validation
-    //             await Promise.all(this.fields.map(async (field) => {
-    //               if (field.name.startsWith('$')) return
-    //               let val = line[field.name]
-    //               if (typeof val === 'undefined') val = line[field.label]
-    //               if (typeof val === 'undefined') val = null
-    //               else {
-    //                 if (field.readonly) {
-    //                   if (this.importErrorCallback) this.importErrorCallback('readonlyColumnDetected', i+1)
-    //                   throw new Error(`VueExcelEditor: [row=${i+1}] ` + this.localizedLabel.readonlyColumnDetected + ': ' + field.name)
-    //                 }
-    //                 if (field.change) {
-    //                   let result = await field.change(val, rec[field.name], rec, field)
-    //                   if (result === false) {
-    //                     if (this.importErrorCallback) this.importErrorCallback('columnHasValidationError', i+1)
-    //                     throw new Error(`VueExcelEditor: [row=${i+1}, val=${val}] ` + this.localizedLabel.columnHasValidationError(field.name, ''))
-    //                   }
-    //                 }
-    //                 if (field.validate) {
-    //                   let err
-    //                   if ((err = field.validate(val, rec[field.name], rec, field))) {
-    //                     if (this.importErrorCallback) this.importErrorCallback('columnHasValidationError', i+1, val)
-    //                     throw new Error(`VueExcelEditor: [row=${i+1}, val=${val}] ` + this.localizedLabel.columnHasValidationError(field.name, err))
-    //                   }
-    //                 }
-    //                 if (this.validate) {
-    //                   let err
-    //                   if ((err = this.validate(val, rec[field.name], rec, field))) {
-    //                     if (this.importErrorCallback) this.importErrorCallback('rowHasValidationError', i+1, val)
-    //                     throw new Error(`VueExcelEditor: [row=${i+1}, val=${val}] ` + this.localizedLabel.rowHasValidationError(i + 1, field.name, err))
-    //                   }
-    //                 }
-    //               }
-    //               if (val !== null) rec[field.name] = val
-    //               else if (field.mandatory) {
-    //                 if (this.importErrorCallback) this.importErrorCallback(field.mandatory, i+1, val)
-    //                 throw new Error(`VueExcelEdutor: [row=${i+1}, val=${val}] ` + field.mandatory)
-    //               }
-    //             }))
+                // Raise exception if readonly not not pass validation
+                await Promise.all(this.fields.map(async (field) => {
+                  if (field.name.startsWith('$')) return
+                  let val = line[field.name]
+                  if (typeof val === 'undefined') val = line[field.label]
+                  if (typeof val === 'undefined') val = null
+                  else {
+                    if (field.readonly) {
+                      if (this.importErrorCallback) this.importErrorCallback('readonlyColumnDetected', i+1)
+                      throw new Error(`VueExcelEditor: [row=${i+1}] ` + this.localizedLabel.readonlyColumnDetected + ': ' + field.name)
+                    }
+                    if (field.change) {
+                      let result = await field.change(val, rec[field.name], rec, field)
+                      if (result === false) {
+                        if (this.importErrorCallback) this.importErrorCallback('columnHasValidationError', i+1)
+                        throw new Error(`VueExcelEditor: [row=${i+1}, val=${val}] ` + this.localizedLabel.columnHasValidationError(field.name, ''))
+                      }
+                    }
+                    if (field.validate) {
+                      let err
+                      if ((err = field.validate(val, rec[field.name], rec, field))) {
+                        if (this.importErrorCallback) this.importErrorCallback('columnHasValidationError', i+1, val)
+                        throw new Error(`VueExcelEditor: [row=${i+1}, val=${val}] ` + this.localizedLabel.columnHasValidationError(field.name, err))
+                      }
+                    }
+                    if (this.validate) {
+                      let err
+                      if ((err = this.validate(val, rec[field.name], rec, field))) {
+                        if (this.importErrorCallback) this.importErrorCallback('rowHasValidationError', i+1, val)
+                        throw new Error(`VueExcelEditor: [row=${i+1}, val=${val}] ` + this.localizedLabel.rowHasValidationError(i + 1, field.name, err))
+                      }
+                    }
+                  }
+                  if (val !== null) rec[field.name] = val
+                  else if (field.mandatory) {
+                    if (this.importErrorCallback) this.importErrorCallback(field.mandatory, i+1, val)
+                    throw new Error(`VueExcelEdutor: [row=${i+1}, val=${val}] ` + field.mandatory)
+                  }
+                }))
 
-    //             // Do actual insert/update if 2nd pass
-    //             if (pass === 1) {
-    //               if (rowPos >= 0) {
-    //                 updated++
-    //                 Object.keys(rec).forEach(name => {
-    //                   if (name.startsWith('$')) return
-    //                   this.updateCell(rowPos, name, rec[name])
-    //                 })
-    //                 this.selected[rowPos] = this.table[rowPos].$id
-    //               }
-    //               else {
-    //                 this.newRecord(rec, true)
-    //                 inserted++
-    //               }
-    //             }
-    //           }))
-    //           pass++
-    //         }
-    //         if (pass === 2 && this.importCallback) {
-    //           this.importCallback({
-    //             inserted: inserted,
-    //             updated: updated,
-    //             recordAffected: inserted + updated
-    //           })
-    //         }
-    //       }
-    //       catch (e) {
-    //         if (this.importErrorCallback) this.importErrorCallback(e.message)
-    //         throw new Error('VueExcelEditor: ' + e.stack)
-    //       }
-    //       finally {
-    //         this.processing = false
-    //         this.$refs.importFile.value = ''
-    //       }
-    //     }
-    //     fileReader.onerror = (e) => {
-    //       this.processing = false
-    //       this.$refs.importFile.value = ''
-    //       if (this.importErrorCallback) this.importErrorCallback(e.message)
-    //       throw new Error('VueExcelEditor: ' + e.stack)
-    //     }
-    //     fileReader.readAsBinaryString(file)
-    //   }, 500)      
+                // Do actual insert/update if 2nd pass
+                if (pass === 1) {
+                  if (rowPos >= 0) {
+                    updated++
+                    Object.keys(rec).forEach(name => {
+                      if (name.startsWith('$')) return
+                      this.updateCell(rowPos, name, rec[name])
+                    })
+                    this.selected[rowPos] = this.table[rowPos].$id
+                  }
+                  else {
+                    this.newRecord(rec, true)
+                    inserted++
+                  }
+                }
+              }))
+              pass++
+            }
+            if (pass === 2 && this.importCallback) {
+              this.importCallback({
+                inserted: inserted,
+                updated: updated,
+                recordAffected: inserted + updated
+              })
+            }
+          }
+          catch (e) {
+            if (this.importErrorCallback) this.importErrorCallback(e.message)
+            throw new Error('VueExcelEditor: ' + e.stack)
+          }
+          finally {
+            this.processing = false
+            this.$refs.importFile.value = ''
+          }
+        }
+        fileReader.onerror = (e) => {
+          this.processing = false
+          this.$refs.importFile.value = ''
+          if (this.importErrorCallback) this.importErrorCallback(e.message)
+          throw new Error('VueExcelEditor: ' + e.stack)
+        }
+        fileReader.readAsBinaryString(file)
+      }, 500)      
     },
     
     exportTable (format, selectedOnly, filename) {
-      // this.processing = true
-      // setTimeout(() => {
-      //   const wb = XLSX.utils.book_new()
-      //   let ws1 = null
-      //   let data = this.table
-      //   if (selectedOnly)
-      //     data = this.table.filter((rec, i) => this.selected[i])
-      //   const mapped = data.map(rec => {
-      //     const conv = {}
-      //     this.fields.forEach(field => conv[field.name] = rec[field.name])
-      //     return conv
-      //   })
-      //   ws1 = XLSX.utils.json_to_sheet(mapped, {
-      //     header: this.fields.map(field => field.name)
-      //   })
-      //   const labels = Array.from(this.labelTr.children).slice(1).map(t => t.children[0].innerText)
-      //   XLSX.utils.sheet_add_aoa(ws1, [labels], {origin: 0})
-      //   ws1['!cols'] = Array.from(this.labelTr.children).slice(1).map((t) => {
-      //     return {
-      //       width: t.getBoundingClientRect().width / 6.5
-      //     }
-      //   })
-      //   XLSX.utils.book_append_sheet(wb, ws1, 'Sheet1')
-      //   filename = filename || 'export'
-      //   switch (format) {
-      //     case 'csv':
-      //       if (!filename.endsWith('.csv')) filename = filename + '.csv'
-      //       break
-      //     case 'xls':
-      //       if (!filename.endsWith('.xls')) filename = filename + '.xls'
-      //       break
-      //     case 'xlsx':
-      //     case 'excel':
-      //     default:
-      //       if (!filename.endsWith('.xlsx')) filename = filename + '.xlsx'
-      //       break
-      //   }
-      //   if (filename.endsWith('.xlsx'))
-      //     XLSX.writeFile(wb, filename, {
-      //       compression: 'DEFLATE',
-      //       compressionOptions: {
-      //         level: 6
-      //       }
-      //     })
-      //   else
-      //     XLSX.writeFile(wb, filename)
+      this.processing = true
+      setTimeout(() => {
+        const wb = XLSX.utils.book_new()
+        let ws1 = null
+        let data = this.table
+        if (selectedOnly)
+          data = this.table.filter((rec, i) => this.selected[i])
+        const mapped = data.map(rec => {
+          const conv = {}
+          this.fields.forEach(field => conv[field.name] = rec[field.name])
+          return conv
+        })
+        ws1 = XLSX.utils.json_to_sheet(mapped, {
+          header: this.fields.map(field => field.name)
+        })
+        const labels = Array.from(this.labelTr.children).slice(1).map(t => t.children[0].innerText)
+        XLSX.utils.sheet_add_aoa(ws1, [labels], {origin: 0})
+        ws1['!cols'] = Array.from(this.labelTr.children).slice(1).map((t) => {
+          return {
+            width: t.getBoundingClientRect().width / 6.5
+          }
+        })
+        XLSX.utils.book_append_sheet(wb, ws1, 'Sheet1')
+        filename = filename || 'export'
+        switch (format) {
+          case 'csv':
+            if (!filename.endsWith('.csv')) filename = filename + '.csv'
+            break
+          case 'xls':
+            if (!filename.endsWith('.xls')) filename = filename + '.xls'
+            break
+          case 'xlsx':
+          case 'excel':
+          default:
+            if (!filename.endsWith('.xlsx')) filename = filename + '.xlsx'
+            break
+        }
+        if (filename.endsWith('.xlsx'))
+          XLSX.writeFile(wb, filename, {
+            compression: 'DEFLATE',
+            compressionOptions: {
+              level: 6
+            }
+          })
+        else
+          XLSX.writeFile(wb, filename)
 
-      //   this.processing = false
-      // }, 500)
+        this.processing = false
+      }, 500)
     },
 
     /* *** Select *******************************************************************************************
