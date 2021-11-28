@@ -1,5 +1,5 @@
 /node_modules
-/dist
+dist/*
 node_proprietary_modules/*
 !node_proprietary_modules/flowchart-logyc-1.0.0.tgz
 /public/hot
