@@ -61,6 +61,12 @@
                     @mouseout="colSepMouseOut">
                   <div class="add-col-btn"> + </div>
                 </div>
+                <div class="col-sep"
+                    @mousedown="colSepMouseDown"
+                    @mouseover="colSepMouseOver"
+                    @mouseout="colSepMouseOut">
+                  <div class="add-col-btn"  style="right: 20px;"> oooo </div>
+                </div>
               </th>
             </tr>
             <tr :class="{hide: !filterRow}">
@@ -77,18 +83,19 @@
                 <svg v-else aria-hidden="true" focusable="false" data-prefix="fas" data-icon="check-circle" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-check-circle fa-w-16 fa-sm"><path fill="currentColor" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"></path></svg>
                 -->
               </td>
-              <vue-excel-filter v-for="(item, p) in fields"
-                                v-show="!item.invisible"
-                                :ref="`filter-${item.name}`"
-                                :colspan="p === fields.length - 1? 2: 1"
-                                :key="`th2-${p}`"
-                                v-model="columnFilter[p]"
-                                :class="{'sticky-column': item.sticky}"
-                                :style="{left: item.left}"
-                                class="column-filter" />
+              <vue-excel-filter 
+                v-for="(item, p) in fields"
+                v-show="!item.invisible"
+                :ref="`filter-${item.name}`"
+                :colspan="p === fields.length - 1? 2: 1"
+                :key="`th2-${p}`"
+                v-model="columnFilter[p]"
+                :class="{'sticky-column': item.sticky}"
+                :style="{left: item.left}"
+                class="column-filter" />
             </tr>
           </thead>
-          <tbody @click="clickCel">
+          <tbody @click="clickCel" @mousedown="detectmousedown" @mouseup="detectmouseup">
             <tr v-if="localizedLabel.noRecordIndicator && pagingTable.length == 0">
               <td colspan="100%" style="height:40px; vertical-align: middle; text-align: center"></td>
             </tr>
@@ -119,9 +126,18 @@
                       select: item.options,
                       datepick: item.type == 'date',
                       'sticky-column': item.sticky,
-                      'selected-cell': checkSelectedCell(rowPos,p,item)
+                      'border-dance' : checkSelectedCellsForExpression(rowPos, p, item),
+                      'expression-cell' : currentCellForExpression && rowPos == currentCellForExpression.rowPos && item.name.replace('-value','') == currentCellForExpression.field,
+                      'selected-cell': checkSelectedCells(rowPos, p, item),
                     }"
-                    :style="Object.assign(cellStyle(record, item), renderColumnCellStyle(item))"
+                    :style="[Object.assign(cellStyle(record, item), renderColumnCellStyle(item)), 
+						checkSelectedCellsForExpression(rowPos, p, item) == 'last' ? 
+						{
+							'background' : 'linear-gradient(90deg, '+item.color+' 50%, transparent 50%), linear-gradient(90deg, '+item.color+' 50%, transparent 50%), linear-gradient(0deg, '+item.color+' 50%, transparent 50%), linear-gradient(0deg, '+item.color+' 50%, transparent 50%)',
+  							'background-repeat': 'repeat-x, repeat-x, repeat-y, repeat-y',
+  							'background-size': '15px 2px, 15px 2px, 2px 15px, 2px 15px',
+  							'background-position': '0px 0px, 200px 100px, 0px 100px, 200px 0px'
+						} : checkSelectedCellsForExpression(rowPos, p, item) == true ? {'border' : '1.5px solid '+ item.color} : '']"
                     :key="p"
                     @mouseover="cellMouseOver"
                     @mousemove="cellMouseMove">{{ item.toText(record[item.name]) }}</td>
@@ -163,6 +179,7 @@
                       @blur="inputBoxBlur"
                       @mousemove="inputBoxMouseMove"
                       @mousedown="inputBoxMouseDown"
+               
                       trim
                       autocomplete="off"
                       autocorrect="off"
@@ -286,6 +303,8 @@ import DatePicker from 'vue2-datepicker'
 import XLSX from 'xlsx'
 
 import 'vue2-datepicker/index.css'
+import { length } from '@amcharts/amcharts4/.internal/core/utils/Iterator'
+import { findIndex } from '@amcharts/amcharts4/.internal/core/utils/Array'
 
 export default {
   components: {
@@ -297,11 +316,11 @@ export default {
   },
   props: {
       disablePanelSetting: {
-      type: Boolean,
-      default() {
-        return false;
-      }
-    },
+		type: Boolean,
+		default() {
+			return false;
+		}
+		},
     disablePanelFilter: {
       type: Boolean,
       default() {
@@ -326,7 +345,7 @@ export default {
     noFinding: {type: Boolean, default: false},
     noFindingNext: {type: Boolean, default: false},
     filterRow: {type: Boolean, default: false},
-    freeSelect: {type: Boolean, default: false},
+    freeSelect: {type: Boolean, default: true},
     noFooter: {type: Boolean, default: false},
     noPaging: {type: Boolean, default: false},
     noNumCol: {type: Boolean, default: false},
@@ -342,7 +361,7 @@ export default {
     readonlyStyle: {type: Object, default () {return {}}},
     remember: {type: Boolean, default: false},
     register: {type: Function, default: null},
-    allowAddCol: {type: Boolean, default: false},
+    allowAddCol: {type: Boolean, default: true},
     noHeaderEdit: {type: Boolean, default: false},
     addColumn: {type: Function, default: null},
     spellcheck: {type: Boolean, default: false},
@@ -400,7 +419,10 @@ export default {
       }
     },
     clearSelectedCells: Boolean,
-    deleteSelectedRows: Boolean,
+    deleteSelectedRows: Boolean,   
+    selectedCellsForFormula: Array,
+    isForFormulaSetup: Boolean,
+    currentCellForExpression: Object
   },
   data () {
     const pageSize = this.noPaging ? 999999 : 20
@@ -480,7 +502,10 @@ export default {
       showSelectedOnly: false,
 
       clicks: 0,
-      timer: 700
+      timer: 700,
+      mouseClicks: 0,
+      mouseTimer: 700,
+      dragging: false
     }
     return dataset
   },
@@ -530,7 +555,7 @@ export default {
     }
   },
   watch: {
-    value () {
+    value() {
       this.lazy(() => {
         this.refresh()
         if (this.pageTop > this.table.length)
@@ -579,8 +604,8 @@ export default {
     },
     clearSelectedCells(){
       if (this.clearSelectedCells) {
-          this.selectedCells = [];
-          this.$emit('selected-cells-cleared');
+        this.selectedCells = [];
+        this.$emit('selected-cells-cleared');
       }
     }
   },
@@ -635,18 +660,39 @@ export default {
     }
   },
   methods: {
-    checkSelectedCell(row, col, record){
-      	let records = this.selectedCells;
+    checkSelectedCells(row, col, record){
+      let records = this.selectedCells;
+		  let headerId = record.name.replace('-value','');
+
+      for (const element of records) {
+        let header = element.record && element.record.header_id ? element.record.header_id : null;
+        if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
+          return true;
+        }
+      }
+      return false;
+    },
+	checkSelectedCellsForExpression(row, col, record){
+		let records = this.selectedCellsForFormula;
+    //console.log({selectedCellsForFormula:records, currentCellForExpression: this.currentCellForExpression});
 		let headerId = record.name.replace('-value','');
+		let i = 0;
 
 		for (const element of records) {
 			let header = element.record && element.record.header_id ? element.record.header_id : null;
-			if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
+      //console.log({col: col, 'element.colPos': element.colPos, row: row, 'element.rowPos': element.rowPos, headerId: headerId, header: header});
+			
+      if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
+        	record.color = element.color;
+				if (i == records.length-1) {
+					return 'last';
+				}
 				return true;
 			}
+			i++;
 		}
-      	return false;
-    },
+		return false;
+	},
     componentTabInto (e) {
       if (e.keyCode === 9) {
         if (!this.moveInputSquare(this.currentRowPos, this.currentColPos))
@@ -1290,10 +1336,15 @@ export default {
       if (!e.altKey) this.systable.classList.remove('alt')
     },
     winKeydown (e) {
-	 
-      console.log(this.mousein);
-      console.log(this.focused);
-
+      if (e.keyCode === 46 && this.focused){
+        let field=this.fields[this.currentColPos]; 
+        field = field.name.replace('-value','');
+        this.selectedCells = [];
+        this.$emit('selected-cells-cleared');   
+        this.$emit('clear-cells-for-formula');   
+        this.$emit('cell-delete', this.currentColPos, this.currentRowPos, field);
+        return;
+      }
       if (e.shiftKey && this.focused) {
         switch (e.keyCode) {
           case 16: // ignore shift key
@@ -1330,19 +1381,21 @@ export default {
             this.selectedCells = [];
             for (let index = fromRowPos; index <= toRowPos; index++) {
               for (let col_index = fromColPos; col_index <= toColPos; col_index++) {
-                  let field=this.fields[col_index];
-                  field = field.name.replace('-value','');
-                  let record = this.table[index][field] ? this.table[index][field] : null;
+                  let field=this.fields[col_index]; 
+                  let header_label = field.label;
                   let rowPos = index;
                   let colPos = col_index;
-                  this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record});
+
+                  field = field.name.replace('-value','');
+                  let record = this.table[index][field] ? this.table[index][field] : null;
+                  this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record, header_label: header_label});
               }
             }
             
             e.preventDefault();
             break;
         }
-		return;
+		    return;
       }
       if (e.altKey) this.systable.classList.add('alt')
       if (!this.mousein && !this.focused) return
@@ -2273,27 +2326,82 @@ export default {
       return false
     },
     clickCel(e) {
-      this.clicks++;      
-      if(this.clicks === 1) {
-         this.timer = setTimeout(() => {
-            this.clicks = 0;
-         }, 700);
-         this.mouseDown(e);
-         return;
-      }
+		if (!this.isForFormulaSetup) {
+			this.clicks++;      
+			if(this.clicks === 1) {
+				this.timer = setTimeout(() => {
+					this.clicks = 0;
+				}, 700);	
+				this.mouseDown(e);  
+        // this.selectedCells = [];
+        // this.$emit('selected-cells-cleared');   
+        window.addEventListener('mousemove', this.detectmousemove);
+				return;
+			}
+			clearTimeout(this.timer);  
+			this.doubleClick(e);
+			this.clicks = 0;
+		} else {
+			this.mouseDown(e);
+		}
+  },
+  detectmousedown(e){
+    e.preventDefault()
+    this.mouseClicks++;      
+			if(this.mouseClicks === 1) {
+				this.mouseTimer = setTimeout(() => {
+					this.mouseClicks = 0;
+				}, 700);	
+        this.selectedCells = [];
+        this.$emit('selected-cells-cleared');     
+				return;
+			}
+			//clearTimeout(this.timer);  
       
-      clearTimeout(this.timer);  
-      this.doubleClick(e);
-      this.clicks = 0;
-    },
-    mouseDown (e) {
+      this.dragging=true;
+      
+			this.mouseClicks = 0;
+  },
+	detectmousemove(e){
+		if (this.dragging && e.target.parentNode.parentNode.tagName === 'TBODY' && !e.target.classList.contains('first-col')) {
+			e.preventDefault()
+			const row = e.target.parentNode
+			const colPos = Array.from(row.children).indexOf(e.target) - 1
+			const rowPos = Array.from(row.parentNode.children).indexOf(row)
+			this.addDraggedCells(rowPos, colPos);
+		}       
+	},
+  detectmouseup(e){
+     e.preventDefault()
+      this.dragging = false;
+      window.removeEventListener('mousemove', this.detectmousemove)
+      window.removeEventListener('mouseup', this.detectmouseup)
+ 
+    if (this.selectedCells.length > 0) {
+    this.$emit('copy-dragged-cells', this.selectedCells);
+    }
+    
+  },  
+   detectmouseout(e){
+      this.dragging = false;
+       window.removeEventListener('mousemove', this.detectmousemove)
+    window.removeEventListener('mouseup', this.detectmouseup)
+ 
+    // if (this.selectedCells.length > 0) {
+    // this.$emit('copy-dragged-cells', this.selectedCells);
+    // }
+     e.preventDefault()
+  },  
+  mouseDown (e) {
+       e.stopPropagation()
       if (e.target.parentNode.parentNode.tagName === 'TBODY' && !e.target.classList.contains('first-col')) {
-        e.preventDefault()
+  
         setTimeout(() => this.inputBox.focus())
         this.focused = true
         const row = e.target.parentNode
         const colPos = Array.from(row.children).indexOf(e.target) - 1
         const rowPos = Array.from(row.parentNode.children).indexOf(row)
+
         this.$emit('cell-click', {rowPos, colPos})
         this.moveInputSquare(rowPos, colPos)
         if (this.currentField && this.currentField.link && e.altKey)
@@ -2365,13 +2473,14 @@ export default {
     },
     mouseOut () {
       this.mousein = false
-      this.systable.classList.remove('mouseover')
+      this.systable.classList.remove('mouseover');
+       this.$emit('mouse-out');
     },
 
     /* *** InputBox *****************************************************************************************
      */
     moveInputSquare (rowPos, colPos, clickdouble= false) {
-      if (colPos < 0) return false
+      if (colPos < 0) return false 
       const top = this.pageTop
       let row = this.recordBody.children[rowPos]
       if (!row) {
@@ -2405,7 +2514,7 @@ export default {
         this.inputBoxChanged = false
       }
 
-      // Relocate the inputSquare
+      //Relocate the inputSquare
       const cell = row.children[colPos + 1]
       if (!cell) return false
       this.currentField = this.fields[colPos]
@@ -2420,7 +2529,7 @@ export default {
       this.inputSquare.style.zIndex = this.currentField.sticky ? 3 : 1;
       this.inputSquare.style.display = "block";
 
-      // Adjust the scrolling to display the whole focusing cell
+      //Adjust the scrolling to display the whole focusing cell
       if (!this.currentField.sticky) {
         const boundRect = this.$el.getBoundingClientRect()
         if (cellRect.right >= boundRect.right - 12)
@@ -2434,12 +2543,25 @@ export default {
       this.currentCell = cell
       this.currentRecord = this.table[top + rowPos]
       
-	let row_pos = JSON.parse(JSON.stringify({colPos: colPos, rowPos: rowPos }));
+		  let row_pos = JSON.parse(JSON.stringify({colPos: colPos, rowPos: rowPos }));
       this.selectedCurrentColPos = row_pos.colPos;
       this.selectedCurrentRowPos =  row_pos.rowPos;
 
-      this.$emit('cell-focus', {rowPos, colPos, cell, record: this.currentRecord})
 
+      let field_name_value = this.currentField.name;
+      let field_name = this.currentField.name.replace('-value','');
+      let record = {};
+      record[field_name] =  this.currentRecord[field_name];
+      record[field_name_value] =  this.currentRecord[field_name_value];
+
+	 if (this.isForFormulaSetup) {
+		this.$emit('selected-cell-for-formula', {rowPos ,colPos, cell, record: record, field: field_name, header_label: this.currentField.label});
+	 } else {
+		if (!this.dragging) {
+			this.$emit('cell-focus', {rowPos ,colPos, cell, record: record, field: field_name, header_label: this.currentField.label});
+		}
+	 }
+    
       // Off all editors
       if (this.showDatePicker) this.showDatePicker = false
       if (this.autocompleteInputs.length) {
@@ -2457,6 +2579,71 @@ export default {
         this.labelTr.children[colPos + 1].classList.add('focus')
       }
       return true
+    },
+	  addDraggedCells(rowPos, colPos) {
+      if (colPos < 0) return false
+      const top = this.pageTop
+      let row = this.recordBody.children[rowPos]
+      if (!row) {
+        if (rowPos > this.currentRowPos) {
+        // move the whole page down 1 record
+        if (top + this.pageSize < this.table.length)
+          top += 1
+        else
+          return false
+          row = this.recordBody.children[--rowPos]
+        }
+        else {
+        // move the whole page up 1 record
+        if (top - 1 >= 0)
+          top -= 1
+        else
+          return false
+        row = this.recordBody.children[++rowPos]
+        }
+      }
+      const cell = row.children[colPos + 1]
+      if (!cell) return false
+      let currentField = this.fields[colPos];
+
+      let currentRowPos = rowPos
+      let currentColPos = colPos
+      let currentCell = cell
+      let currentRecord = this.table[top + rowPos]
+      
+      let pos = JSON.parse(JSON.stringify({colPos: colPos, rowPos: rowPos }));
+      this.selectedCurrentColPos = pos.colPos;
+      this.selectedCurrentRowPos =  pos.rowPos;
+ 
+      let field_name_value = currentField.name;
+      let field_name = currentField.name.replace('-value','');
+      let record = {};
+      record[field_name] =  currentRecord[field_name];
+      record[field_name_value] =  currentRecord[field_name_value];
+     
+      const fromColPos = this.currentColPos < colPos ? this.currentColPos : colPos;
+      const toColPos = this.currentColPos > colPos ?this.currentColPos : colPos;
+
+      const fromRowPos = this.currentRowPos < rowPos? this.currentRowPos : rowPos;
+      const toRowPos = this.currentRowPos > rowPos ? this.currentRowPos : rowPos;
+                                         
+      //console.log({currentCellForExpression: this.currentCellForExpression, fromColPos: fromColPos, toColPos: toColPos,fromRowPos:fromRowPos, toRowPos:toRowPos });
+                    
+      this.selectedCells = [];
+      for (let index = fromRowPos; index <= toRowPos; index++) {
+          for (let col_index = fromColPos; col_index <= toColPos; col_index++) {
+              let field=this.fields[col_index]; 
+              let header_label = field.label;
+              let rowPos = index;
+              let colPos = col_index;
+
+              field = field.name.replace('-value','');
+              let record = this.table[index][field] ? this.table[index][field] : null;
+              this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record, header_label: header_label, field: field});
+          }
+      }
+
+   		return true;
     },
     inputSquareClick () {
       if (!this.currentField.readonly && !this.inputBoxShow && this.currentField.type !== 'select') {
@@ -2477,12 +2664,10 @@ export default {
       record[field_name_value] =  this.currentRecord[field_name_value];
       let current_field = this.currentField;
      
-      this.$emit('cell-dbfocus', {rowPos ,colPos, cell, record: record, field: field_name});
+      this.$emit('cell-dbfocus', {rowPos ,colPos, cell, record: record, field: field_name, header_label: this.currentField.label});
     },
     inputBoxMouseMove (e) {
       let cursor = 'text'
-
-
       if (!this.currentField.readonly
         && (this.currentField.options || this.currentField.type === 'date')
         && e.target.offsetWidth - e.offsetX < 15)
@@ -2490,6 +2675,7 @@ export default {
       e.target.style.cursor = cursor
     },
     inputBoxMouseDown (e) {
+      this.dragging = true;
       if (e.target.offsetWidth - e.offsetX > 15) return
       if (this.currentField.readonly) return
       if (this.currentField.options) {
@@ -2860,6 +3046,10 @@ input:focus, input:active:focus, input.active:focus {
   z-index: 4;
   border: 2px solid rgb(108, 143, 108);
   /* transition: all 0.04s linear; */
+}
+.expression-cell {
+	border: 2px solid rgb(108, 143, 108) !important;
+	cursor: text !important;
 }
 .no-transition {
   transition: none !important;
@@ -3359,6 +3549,19 @@ a:disabled {
   transform: translate(-50%, 0%);
 }
 .selected-cell {
-  background-color: #c0ecffa8;
+  background-color: #c0ecffa8 !important;;
+}
+.border-dance {
+  height: 100%;
+  width: 100%;
+  animation: border-dance 6s infinite linear;
+}
+@keyframes border-dance {
+  0% {
+    background-position: 0px 0px,250px 100%, 0px 100px, 100% 0px;
+  }
+  100% {
+    background-position: 250px 0px, 0px 100%, 0px 0px, 100% 100px;
+  }
 }
 </style>
