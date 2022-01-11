@@ -2,6 +2,7 @@
 dist/*
 node_proprietary_modules/*
 !node_proprietary_modules/flowchart-logyc-1.0.0.tgz
+vue-excel-editor-1.5.4.tgz
 /public/hot
 /public/js
 /public/css
