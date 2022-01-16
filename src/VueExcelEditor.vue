@@ -51,22 +51,26 @@
                           'sticky-column': item.sticky}"
                   :style="{left: item.left}"
                   @mousedown="headerClick($event, p)"
-                  @contextmenu.prevent="panelFilterClick(item)">
+                  @contextmenu.prevent="panelFilterClick(item)" style="position:relative">
                 <div :class="{'filter-sign': columnFilter[p]}">
+                  
                   <span :class="{'table-col-header': !noHeaderEdit}" v-html="headerLabel(item.label, item)"></span>
+                   <button class="btn-edit" style="display:block !important; background-color: #ffc10780;     border: solid 1px #2222; border-radius: 5px;     color: white;" @mousedown="editHeader($event, item, p)"><i class="fas fa-edit"></i></button>
                 </div>
+              
                 <div class="col-sep"
                     @mousedown="colSepMouseDown"
                     @mouseover="colSepMouseOver"
-                    @mouseout="colSepMouseOut">
-                  <div class="add-col-btn"> + </div>
+                    @mouseout="colSepMouseOut"
+                  >
+                  <!-- <div class="header-container">
+                  <div data-v-cf2e49d2="" class="add-col-btn" style="background-color: #43a04775display: block;top: 5px;right: 45%;">
+                    <i class="fa fa-pencil"></i>
+                  </div>
+                </div> -->
+                  <div class="add-col-btn"> <i class="fas fa-edit"></i> </div>
                 </div>
-                <div class="col-sep"
-                    @mousedown="colSepMouseDown"
-                    @mouseover="colSepMouseOver"
-                    @mouseout="colSepMouseOut">
-                  <div class="add-col-btn"  style="right: 20px;"> oooo </div>
-                </div>
+               
               </th>
             </tr>
             <tr :class="{hide: !filterRow}">
@@ -315,7 +319,7 @@ export default {
     'date-picker': DatePicker
   },
   props: {
-      disablePanelSetting: {
+    disablePanelSetting: {
 		type: Boolean,
 		default() {
 			return false;
@@ -361,12 +365,14 @@ export default {
     readonlyStyle: {type: Object, default () {return {}}},
     remember: {type: Boolean, default: false},
     register: {type: Function, default: null},
-    allowAddCol: {type: Boolean, default: true},
-    noHeaderEdit: {type: Boolean, default: false},
+    allowAddCol: {type: Boolean, default: false},
+    allowEditCol: {type: Boolean, default: false},
+    noHeaderEdit: {type: Boolean, default: true},
     addColumn: {type: Function, default: null},
     spellcheck: {type: Boolean, default: false},
     newIfBottom: {type: Boolean, default: false},
     validate: {type: Function, default: null},
+
     localizedLabel: {
       type: Object,
       default () {
@@ -771,10 +777,14 @@ export default {
         summary: null,
         toValue: t => t,
         toText: t => t,
-        register: null
+        register: null,
+        relatedTo: null,
+        objectType: null,
+        objectValue: null,
       }
-      if (this.addColumn) colDef = this.addColumn(colDef)
-      this.newColumn(colDef, pos)      
+      if (this.addColumn) colDef = this.addColumn(colDef);
+      
+      this.newColumn(colDef, pos);    
     },
     newColumn (field, pos) {
       this.fields.splice(pos, 0, field)
@@ -1614,14 +1624,23 @@ export default {
 
     /* *** Column Separator *******************************************************************************************
      */
+    editHeader(e, item, index){
+      e.preventDefault()
+      e.stopPropagation()
+      this.$emit('header-to-update', item, index);
+    },
     colSepMouseDown (e) {
       e.preventDefault()
       e.stopPropagation()
+      
       if (this.allowAddCol && !e.target.classList.contains('col-sep')) {
-        e.target.style.display = 'none'
-        const me = e.target.parentElement.parentElement
+         e.target.style.display = 'none'
+         if (!this.allowEditCol) {
+             const me = e.target.parentElement.parentElement
         const pos = Array.from(me.parentElement.children).findIndex(td => td === me)
         this.insertColumn(pos)
+         }
+      
       }
       this.focused = false
       const getStyleVal = (elm, css) => {
@@ -1647,14 +1666,15 @@ export default {
     colSepMouseOver (e) {
       if (e.target.classList.contains('col-sep')) {
         e.target.style.borderRight = '5px solid #cccccc'
-        e.target.style.height = this.systable.getBoundingClientRect().height + 'px'
-        if (this.allowAddCol)
-          e.target.children[0].style.display = 'block'
+        e.target.style.height = this.systable.getBoundingClientRect().height + 'px';
+        if (this.allowAddCol || this.allowEditCol){
+          e.target.children[0].style.display = 'block';
+        }
       }
       else {
         // add-col-btn
         if (this.addColBtnTimeout) clearTimeout(this.addColBtnTimeout)
-        if (this.allowAddCol)
+        if (this.allowAddCol || this.allowEditCol)
           e.target.style.display = 'block'
       }
     },
@@ -2358,7 +2378,7 @@ export default {
 			}
 			//clearTimeout(this.timer);  
       
-      this.dragging=true;
+      //this.dragging=true;
       
 			this.mouseClicks = 0;
   },
@@ -3436,7 +3456,7 @@ a:disabled {
   top: 0;
   right: 0;
   border-right: 5px solid transparent;
-  width: 5px;
+  width: 20%;
   cursor: col-resize;
   height: 100%;
   z-index: 15;
@@ -3448,13 +3468,14 @@ a:disabled {
   right: 8px;
   width: 20px;
   height: 20px;
-  background-color: #2222;
+  background-color: #ffc10780;
   z-index: 15;
   border: solid 1px #2222;
   border-radius: 5px;
   cursor: pointer;
   color: white;
 }
+
 .add-col-btn:hover {
   background-color: #7777;
 }
@@ -3555,6 +3576,15 @@ a:disabled {
   height: 100%;
   width: 100%;
   animation: border-dance 6s infinite linear;
+}
+.header-container:hover > .add-col-btn {
+  display: block !important;
+}
+.header-container {
+  position: absolute;
+  display: block;
+  width: 100%;
+  margin-top: -25%;
 }
 @keyframes border-dance {
   0% {

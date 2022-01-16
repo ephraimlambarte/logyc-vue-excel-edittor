@@ -23,6 +23,10 @@ export default {
     change: {type: Function, default: null},
     link: {type: Function, default: null},
 
+    relatedTo: {type: String, default: null},
+    objectType: {type: String, default: null},
+    objectValue: {type: String, default: null},
+
     allowKeys: {type: [Array, Function], default () {return null}},
     mandatory: {type: String, default: ''},
     lengthLimit: {type: Number, default: 0},
@@ -189,6 +193,10 @@ export default {
         change: this.change,
         link: this.link,
         sort: this.sort,
+
+        relatedTo: this.relatedTo,
+        objectType: this.objectType,
+        objectValue: this.objectValue,
 
         keyField: this.keyField,
         sticky: this.sticky,
