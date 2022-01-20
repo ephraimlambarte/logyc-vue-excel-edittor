@@ -53,9 +53,11 @@
                   @mousedown="headerClick($event, p)"
                   @contextmenu.prevent="panelFilterClick(item)" style="position:relative">
                 <div :class="{'filter-sign': columnFilter[p]}">
-                  
                   <span :class="{'table-col-header': !noHeaderEdit}" v-html="headerLabel(item.label, item)"></span>
-                   <button class="btn-edit" style="display:block !important; background-color: #ffc10780;     border: solid 1px #2222; border-radius: 5px;     color: white;" @mousedown="editHeader($event, item, p)"><i class="fas fa-edit"></i></button>
+                  <div class="" style="width:100%;float:left; padding-top:6px">
+                    <button class="btn-edit" style="display:block !important; float:left; background-color: #ffc10780; border: solid 1px #2222; border-radius: 5px; color: white;" @mousedown="editHeader($event, item, p)"><i class="fas fa-edit"></i></button>
+                    <button class="btn-edit" style="display:block !important; float:left; background-color: #e3342f; border: solid 1px #e3342f; border-radius: 5px; color: white; margin-left:3px" @mousedown="deleteHeader($event, item, p)"><i class="fas fa-trash"></i></button>
+                  </div>
                 </div>
               
                 <div class="col-sep"
@@ -367,7 +369,7 @@ export default {
     register: {type: Function, default: null},
     allowAddCol: {type: Boolean, default: false},
     allowEditCol: {type: Boolean, default: false},
-    noHeaderEdit: {type: Boolean, default: true},
+    noHeaderEdit: {type: Boolean, default: false},
     addColumn: {type: Function, default: null},
     spellcheck: {type: Boolean, default: false},
     newIfBottom: {type: Boolean, default: false},
@@ -1629,6 +1631,11 @@ export default {
       e.stopPropagation()
       this.$emit('header-to-update', item, index);
     },
+    deleteHeader(e, item, index){
+      e.preventDefault()
+      e.stopPropagation()
+      this.$emit('header-to-delete', item, index);
+    },
     colSepMouseDown (e) {
       e.preventDefault()
       e.stopPropagation()
@@ -2376,10 +2383,8 @@ export default {
         this.$emit('selected-cells-cleared');     
 				return;
 			}
-			//clearTimeout(this.timer);  
-      
-      //this.dragging=true;
-      
+			clearTimeout(this.mouseTimer);  
+      this.dragging=true;
 			this.mouseClicks = 0;
   },
 	detectmousemove(e){
