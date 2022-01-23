@@ -684,10 +684,11 @@ export default {
 		let records = this.selectedCellsForFormula;
     //console.log({selectedCellsForFormula:records, currentCellForExpression: this.currentCellForExpression});
 		let headerId = record.name.replace('-value','');
-		let i = 0;
+		let i = 0;    
 
 		for (const element of records) {
-			let header = element.record && element.record.header_id ? element.record.header_id : null;
+			let header = element.record && element.field ? element.field : null;
+      console.log({header: header, element: element, record: record});
       //console.log({col: col, 'element.colPos': element.colPos, row: row, 'element.rowPos': element.rowPos, headerId: headerId, header: header});
 			
       if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
@@ -2360,8 +2361,6 @@ export default {
 					this.clicks = 0;
 				}, 700);	
 				this.mouseDown(e);  
-        // this.selectedCells = [];
-        // this.$emit('selected-cells-cleared');   
         window.addEventListener('mousemove', this.detectmousemove);
 				return;
 			}
