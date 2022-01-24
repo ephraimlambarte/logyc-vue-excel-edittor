@@ -673,7 +673,8 @@ export default {
 		  let headerId = record.name.replace('-value','');
 
       for (const element of records) {
-        let header = element.record && element.record.header_id ? element.record.header_id : null;
+        let header = element.record && element.field ? element.field : null;
+       
         if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
           return true;
         }
@@ -688,7 +689,7 @@ export default {
 
 		for (const element of records) {
 			let header = element.record && element.field ? element.field : null;
-      console.log({header: header, element: element, record: record});
+     // console.log({header: header, element: element, record: record});
       //console.log({col: col, 'element.colPos': element.colPos, row: row, 'element.rowPos': element.rowPos, headerId: headerId, header: header});
 			
       if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
@@ -2391,7 +2392,7 @@ export default {
 			e.preventDefault()
 			const row = e.target.parentNode
 			const colPos = Array.from(row.children).indexOf(e.target) - 1
-			const rowPos = Array.from(row.parentNode.children).indexOf(row)
+			const rowPos = Array.from(row.parentNode.children).indexOf(row);
 			this.addDraggedCells(rowPos, colPos);
 		}       
 	},
@@ -2644,9 +2645,12 @@ export default {
       let record = {};
       record[field_name] =  currentRecord[field_name];
       record[field_name_value] =  currentRecord[field_name_value];
-     
+
+      
       const fromColPos = this.currentColPos < colPos ? this.currentColPos : colPos;
       const toColPos = this.currentColPos > colPos ?this.currentColPos : colPos;
+
+  
 
       const fromRowPos = this.currentRowPos < rowPos? this.currentRowPos : rowPos;
       const toRowPos = this.currentRowPos > rowPos ? this.currentRowPos : rowPos;
@@ -2666,6 +2670,7 @@ export default {
               this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record, header_label: header_label, field: field});
           }
       }
+      console.log( this.selectedCells);
 
    		return true;
     },
