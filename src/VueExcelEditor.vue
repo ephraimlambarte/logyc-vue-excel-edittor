@@ -685,18 +685,22 @@ export default {
 		let records = this.selectedCellsForFormula;
     //console.log({selectedCellsForFormula:records, currentCellForExpression: this.currentCellForExpression});
 		let headerId = record.name.replace('-value','');
-		let i = 0;    
+    // let currentCellSelectedCol =  this.currentCellForExpression ? this.currentCellForExpression.field : null;
+    // let currentCellSelectedRow =  this.currentCellForExpression ? this.currentCellForExpression.rowPos : null;
+		let i = 0;   
 
 		for (const element of records) {
+       
 			let header = element.record && element.field ? element.field : null;
      // console.log({header: header, element: element, record: record});
-      //console.log({col: col, 'element.colPos': element.colPos, row: row, 'element.rowPos': element.rowPos, headerId: headerId, header: header});
-			
+        
       if ((col == element.colPos && row == element.rowPos ) || (headerId == header && row == element.rowPos)) {
-        	record.color = element.color;
-				if (i == records.length-1) {
-					return 'last';
-				}
+        
+        record.color = element.color;
+        if (i == records.length - 1) {
+          //console.log({"element.header_label":element.header_label, element: element,  currentCellForExpression: this.currentCellForExpression, col: col, 'element.colPos': element.colPos, 'element.rowPos': element.rowPos, row: row, currentField: currentCellSelectedCol, headerId: headerId, header: header, 'selectedCurrentRow': this.selectedCurrentRowPos, 'selectedCurrentColPos':  this.selectedCurrentColPos});
+          return 'last';
+        }
 				return true;
 			}
 			i++;
@@ -2373,14 +2377,17 @@ export default {
 		}
   },
   detectmousedown(e){
+    console.log(this.isForFormulaSetup);
     e.preventDefault()
     this.mouseClicks++;      
 			if(this.mouseClicks === 1) {
 				this.mouseTimer = setTimeout(() => {
 					this.mouseClicks = 0;
 				}, 700);	
-        this.selectedCells = [];
-        this.$emit('selected-cells-cleared');     
+        if (!this.isForFormulaSetup) {
+          this.selectedCells = [];
+          this.$emit('selected-cells-cleared');  
+        }   
 				return;
 			}
 			clearTimeout(this.mouseTimer);  
@@ -2670,8 +2677,6 @@ export default {
               this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record, header_label: header_label, field: field});
           }
       }
-      console.log( this.selectedCells);
-
    		return true;
     },
     inputSquareClick () {
