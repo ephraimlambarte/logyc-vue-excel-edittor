@@ -56,6 +56,7 @@
                   <span :class="{'table-col-header': !noHeaderEdit}" v-html="headerLabel(item.label, item)"></span>
                   <div class="" style="width:100%;float:left; padding-top:6px">
                     <button class="btn-edit" style="display:block !important; float:left; background-color: #ffc10780; border: solid 1px #2222; border-radius: 5px; color: white;" @mousedown="editHeader($event, item, p)"><i class="fas fa-edit"></i></button>
+                    <button class="btn-edit" style="display:block !important; float:left; background-color: #9e9e9e; border: solid 1px #2222; border-radius: 5px; color: white; margin-left:3px" @mousedown="selectHeader($event, item, p)"><i class="fas fa-hand-pointer"></i></button>
                     <button class="btn-edit" style="display:block !important; float:left; background-color: #e3342f; border: solid 1px #e3342f; border-radius: 5px; color: white; margin-left:3px" @mousedown="deleteHeader($event, item, p)"><i class="fas fa-trash"></i></button>
                   </div>
                 </div>
@@ -430,7 +431,8 @@ export default {
     deleteSelectedRows: Boolean,   
     selectedCellsForFormula: Array,
     isForFormulaSetup: Boolean,
-    currentCellForExpression: Object
+    currentCellForExpression: Object,
+    selectedHeaders: Array
   },
   data () {
     const pageSize = this.noPaging ? 999999 : 20
@@ -1637,6 +1639,36 @@ export default {
       e.stopPropagation()
       this.$emit('header-to-update', item, index);
     },
+    async selectHeader(e, item, col_index){
+      // debugger;
+      e.preventDefault();
+      e.stopPropagation();
+
+      let field_id = item.name;
+      console.log( this.selectedHeaders);
+      let selected_headers = this.selectedHeaders.find(x => x.name == field_id);
+      
+      if (!selected_headers) {
+        this.$emit('header-selected', item, col_index);
+        for (let row_index = 0; row_index <= this.table.length - 1; row_index++) {
+              let field=this.fields[col_index]; 
+              let header_label = field.label;
+              let rowPos = row_index;
+              let colPos = col_index;
+             
+              field = field.name.replace('-value','');
+              let record = this.table[row_index][field] ? this.table[row_index][field] : null;
+              this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record, header_label: header_label, field: field});
+        }
+      } else {
+        this.$emit('header-selected', item, col_index, false);
+        for (let row_index = 0; row_index <= this.table.length - 1; row_index++) {
+            let tmp_index = this.selectedCells.findIndex(x => x.rowPos == row_index && x.colPos == col_index);
+            this.selectedCells.splice(tmp_index, 1);
+        }
+      }
+      
+    },
     deleteHeader(e, item, index){
       e.preventDefault()
       e.stopPropagation()
@@ -2410,7 +2442,7 @@ export default {
       window.removeEventListener('mouseup', this.detectmouseup)
  
     if (this.selectedCells.length > 0) {
-    this.$emit('copy-dragged-cells', this.selectedCells);
+      this.$emit('copy-dragged-cells', this.selectedCells);
     }
     
   },  
