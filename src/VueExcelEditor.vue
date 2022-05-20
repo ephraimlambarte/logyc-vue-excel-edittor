@@ -1645,7 +1645,6 @@ export default {
       e.stopPropagation();
 
       let field_id = item.name;
-      console.log( this.selectedHeaders);
       let selected_headers = this.selectedHeaders.find(x => x.name == field_id);
       
       if (!selected_headers) {
