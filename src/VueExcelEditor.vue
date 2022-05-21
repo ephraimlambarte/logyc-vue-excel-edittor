@@ -1645,6 +1645,7 @@ export default {
       e.stopPropagation();
 
       let field_id = item.name;
+      console.log( this.selectedHeaders);
       let selected_headers = this.selectedHeaders.find(x => x.name == field_id);
       
       if (!selected_headers) {
@@ -2426,7 +2427,7 @@ export default {
 			this.mouseClicks = 0;
   },
 	detectmousemove(e){
-		if (this.dragging && e.target.parentNode.parentNode.tagName === 'TBODY' && !e.target.classList.contains('first-col')) {
+		if (!this.isForFormulaSetup && this.dragging && e.target.parentNode.parentNode.tagName === 'TBODY' && !e.target.classList.contains('first-col')) {
 			e.preventDefault()
 			const row = e.target.parentNode
 			const colPos = Array.from(row.children).indexOf(e.target) - 1
