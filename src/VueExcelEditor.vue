@@ -1645,7 +1645,6 @@ export default {
       e.stopPropagation();
 
       let field_id = item.name;
-      console.log( this.selectedHeaders);
       let selected_headers = this.selectedHeaders.find(x => x.name == field_id);
       
       if (!selected_headers) {
@@ -2188,13 +2187,6 @@ export default {
     getSelectedRecords () {
       return this.table.filter((rec, i) => this.selected[i])
     },
-    /*
-    deleteSelectedRecords () {
-      this.table = this.table.filter((rec, i) => typeof this.selected[i] === 'undefined')
-      this.selected = {}
-      this.selectedCount = 0
-    },
-    */
     rowLabelClick (e) {
       let target = e.target
       while (target.tagName !== 'TD') target = target.parentNode
@@ -2278,6 +2270,7 @@ export default {
           this.selectRecord(i)
         this.selectedCount = this.table.length
       }
+       this.$emit('selected-rows',this.selected)
     },
     clearAllSelected () {
       // for (let i = 0; i < this.$refs.systable.children[2].children.length; i++)
@@ -2409,25 +2402,26 @@ export default {
 		}
   },
   detectmousedown(e){
-    console.log(this.isForFormulaSetup);
-    e.preventDefault()
-    this.mouseClicks++;      
-			if(this.mouseClicks === 1) {
-				this.mouseTimer = setTimeout(() => {
-					this.mouseClicks = 0;
-				}, 700);	
-        if (!this.isForFormulaSetup) {
-          this.selectedCells = [];
-          this.$emit('selected-cells-cleared');  
-        }   
-				return;
-			}
-			clearTimeout(this.mouseTimer);  
-      this.dragging=true;
-			this.mouseClicks = 0;
+    e.preventDefault();
+    this.$emit('selected-rows', this.selected)
+    this.mouseClicks++;   
+
+    if(this.mouseClicks === 1) {
+      this.mouseTimer = setTimeout(() => {
+        this.mouseClicks = 0;
+      }, 700);	
+      if (!this.isForFormulaSetup) {
+        this.selectedCells = [];
+        this.$emit('selected-cells-cleared');  
+      }   
+      return;
+    }
+    clearTimeout(this.mouseTimer);  
+    this.dragging=true;
+    this.mouseClicks = 0;
   },
 	detectmousemove(e){
-		if (!this.isForFormulaSetup && this.dragging && e.target.parentNode.parentNode.tagName === 'TBODY' && !e.target.classList.contains('first-col')) {
+		if (this.dragging && e.target.parentNode.parentNode.tagName === 'TBODY' && !e.target.classList.contains('first-col')) {
 			e.preventDefault()
 			const row = e.target.parentNode
 			const colPos = Array.from(row.children).indexOf(e.target) - 1
