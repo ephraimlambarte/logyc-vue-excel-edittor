@@ -2410,10 +2410,10 @@ export default {
       this.mouseTimer = setTimeout(() => {
         this.mouseClicks = 0;
       }, 700);	
-      if (!this.isForFormulaSetup) {
-        this.selectedCells = [];
-        this.$emit('selected-cells-cleared');  
-      }   
+      // if (!this.isForFormulaSetup) {
+      //   this.selectedCells = [];
+      //   this.$emit('selected-cells-cleared');  
+      // }   
       return;
     }
     clearTimeout(this.mouseTimer);  
