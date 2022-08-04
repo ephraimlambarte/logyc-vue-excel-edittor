@@ -1420,7 +1420,7 @@ export default {
       if (e.altKey) this.systable.classList.add('alt')
       if (!this.mousein && !this.focused) return
       if (this.mousein && this.focused && e.keyCode === 13) {
-			    this.$emit('selected-cells',  this.selectedCells);
+			    this.$emit('selected-cells-enter',  this.selectedCells);
         	return;
       }
       if (e.ctrlKey || e.metaKey)
@@ -2703,6 +2703,7 @@ export default {
               this.selectedCells.push({rowPos:rowPos, colPos: colPos, record: record, header_label: header_label, field: field});
           }
       }
+      this.$emit('selected-cells', this.selectedCells)
    		return true;
     },
     inputSquareClick () {
